@@ -1,8 +1,11 @@
 package ua.edu.ucu.collections.immutable;
 
+import java.util.Arrays;
+
 public final class ImmutableLinkedList implements ImmutableList {
     private final Node head;
     private final Node tail;
+    private int length;
 
     public ImmutableLinkedList(Object[] elements) {
         head = new Node();
@@ -11,26 +14,33 @@ public final class ImmutableLinkedList implements ImmutableList {
         for (int i = 0; i < elements.length; i++) {
             probe.setPrevious(prevNode);
             probe.setValue(elements[i]);
-            probe.setNext(new Node());
+            if (i < elements.length-1) {
+                probe.setNext(new Node());
+            }
             prevNode = probe;
-            probe = probe.getNext();
+            if (probe.getNext() != null) {
+                probe = probe.getNext();
+            }
         }
         tail = probe;
+        length = elements.length;
     }
 
-    private ImmutableLinkedList(Node head, Node tail) {
+    private ImmutableLinkedList(Node head, Node tail, int length) {
         this.head = head;
         this.tail = tail;
+        length = length;
     }
 
     public ImmutableLinkedList() {
         head = new Node();
         tail = head;
+        length = 0;
     }
 
     public void printLinkedList() {
         Node probe = head;
-        while (probe != null) {
+        for (int i = 0; i < length; i++) {
             System.out.println(probe.getValue());
             probe = probe.getNext();
         }
@@ -38,79 +48,36 @@ public final class ImmutableLinkedList implements ImmutableList {
 
     @Override
     public ImmutableList add(Object e) {
-        Node newNode = head.clone();
-        newNode.printNode();
-        Node probe = newNode;
-        while (probe.getNext() != null) {
-            probe = probe.getNext();
-        }
-        Node prevNode = probe;
-        probe.setNext(new Node());
-        probe = probe.getNext();
-        probe.setPrevious(prevNode);
-
-        return new ImmutableLinkedList(newNode, probe);
+        return addAll(length, new Object[] {e});
     }
 
     @Override
     public ImmutableList add(int index, Object e) {
-        Node newNode = head.clone();
-        Node probe = newNode;
-        for (int i = 0; i < index; i++) {
-            probe = probe.getNext();
-        }
-        Node prevNode = probe;
-        Node nextNode = probe.getNext();
-        probe.setNext(new Node());
-        probe = probe.getNext();
-        probe.setValue(e);
-        probe.setPrevious(prevNode);
-        probe.setNext(nextNode);
-
-        while (probe.getNext() != null) {
-            probe = probe.getNext();
-        }
-
-        return new ImmutableLinkedList(newNode, probe);
+        return addAll(index, new Object[] {e});
     }
 
     @Override
     public ImmutableList addAll(Object[] c) {
-        Node newNode = head.clone();
-        Node probe = newNode;
-        while (probe.getNext() != null) {
-            probe = probe.getNext();
-        }
-
-        for (int i = 0; i < c.length; i++) {
-            Node addNode = new Node();
-            addNode.setValue(c[i]);
-            addNode.setPrevious(probe);
-            probe.setNext(addNode);
-            probe = addNode;
-        }
-
-        return new ImmutableLinkedList(newNode, probe);
+        return addAll(length, c);
     }
 
     @Override
     public ImmutableList addAll(int index, Object[] c) {
-        Node newNode = head.clone();
-        Node probe = newNode;
+        Object[] array = new Object[length+c.length];
+        Node probe = head;
+
         for (int i = 0; i < index; i++) {
+            array[i] = probe.getValue();
             probe = probe.getNext();
         }
-        Node nextNode = probe.getNext();
-        for (int i = 0; i < c.length; i++) {
-            Node addNode = new Node();
-            addNode.setValue(c[i]);
-            addNode.setPrevious(probe);
-            probe.setNext(addNode);
-            probe = addNode;
-        }
 
-        probe.setNext(nextNode);
-        return new ImmutableLinkedList(newNode, probe);
+        System.arraycopy(c, 0, array, index, c.length);
+
+        for (int i = index + c.length; i < length + c.length; i++) {
+            array[i] = probe.getValue();
+            probe = probe.getNext();
+        }
+        return new ImmutableLinkedList(array);
     }
 
     @Override
@@ -125,34 +92,32 @@ public final class ImmutableLinkedList implements ImmutableList {
 
     @Override
     public ImmutableList remove(int index) {
-        Node newNode = head.clone();
-        Node probe = newNode;
-        for (int i = 0; i < index; i++) {
+        Object[] array = new Object[length-1];
+        Node probe = head;
+        int j = 0;
+        for (int i = 0; i < length; i++) {
+            if (i == index) {
+                probe = probe.getNext();
+                continue;
+            }
+            array[j++] = probe.getValue();
             probe = probe.getNext();
         }
 
-        probe.setNext(probe.getNext().getNext());
-
-        while (probe.getValue() != null) {
-            probe = probe.getNext();
-        }
-
-        return new ImmutableLinkedList(newNode, probe);
+        return new ImmutableLinkedList(array);
     }
 
     @Override
     public ImmutableList set(int index, Object e) {
-        Node newNode = head.clone();
-        Node probe = newNode;
-        for (int i = 0; i < index+1; i++) {
-            probe = probe.getNext();
-        }
-        probe.setValue(e);
-        while (probe.getNext() != null) {
+        Object[] array = new Object[length];
+        Node probe = head;
+
+        for (int i = 0; i < length; i++) {
+            array[i] = (i == index) ? e : probe.getValue();
             probe = probe.getNext();
         }
 
-        return new ImmutableLinkedList(newNode, probe);
+        return new ImmutableLinkedList(array);
     }
 
     @Override
@@ -172,14 +137,7 @@ public final class ImmutableLinkedList implements ImmutableList {
 
     @Override
     public int size() {
-        int i = 0;
-        Node probe = head;
-        while (probe != null) {
-            probe = probe.getNext();
-            i++;
-        }
-
-        return i;
+        return length;
     }
 
     @Override
@@ -189,16 +147,15 @@ public final class ImmutableLinkedList implements ImmutableList {
 
     @Override
     public boolean isEmpty() {
-        return size() == 0;
+        return length == 0;
     }
 
     @Override
     public Object[] toArray() {
-        int size = size();
-        Object[] array = new Object[size];
+        Object[] array = new Object[length];
         Node newNode = head.clone();
         Node probe = newNode;
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < length; i++) {
             array[i] = probe.getValue();
             probe = probe.getNext();
         }
@@ -207,17 +164,7 @@ public final class ImmutableLinkedList implements ImmutableList {
     }
 
     public ImmutableLinkedList addFirst(Object e) {
-        Node newNode = head.clone();
-        Node probe = newNode;
-        while (probe.getNext() != null) {
-            probe = probe.getNext();
-        }
-        Node nextNode = newNode;
-        nextNode.setPrevious(newNode);
-        newNode.setPrevious(new Node());
-        newNode = newNode.getPrevious();
-        newNode.setNext(nextNode);
-        return new ImmutableLinkedList(newNode, probe);
+        return (ImmutableLinkedList) addAll(0, new Object[] {e});
     }
 
     public ImmutableLinkedList addLast(Object e) {

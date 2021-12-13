@@ -59,27 +59,9 @@ public class Node {
             prevNode = nextNode;
             probe = probe.getNext();
         }
-//        if (newNode.next != null) {
-//            Node probe = new Node(newNode.next);
-//            newNode.next = probe;
-//            Node prevNode = newNode;
-//            while (probe != null) {
-//                probe = new Node(probe);
-//                probe.previous = prevNode;
-//                prevNode = probe;
-//                probe = probe.next;
-//            }
-//        }
+
 
         return newNode;
-    }
-
-    public void printNode() {
-        Node probe = this;
-        while (probe != null) {
-            System.out.println(probe.getValue());
-            probe = probe.getNext();
-        }
     }
 }
 
